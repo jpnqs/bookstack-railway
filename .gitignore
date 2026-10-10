@@ -6,3 +6,4 @@
 *.age
 backups/
 *.local
+*.local.json

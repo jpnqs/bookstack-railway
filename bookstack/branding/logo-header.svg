@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 64">
+  <g>
+    <g stroke="#FFFFFF" stroke-width="4" stroke-linecap="round">
+      <path d="M6 13 L16 20"/>
+      <path d="M4 25 L12 30" opacity=".7"/>
+      <path d="M17 6 L24 13" opacity=".7"/>
+    </g>
+    <ellipse cx="38" cy="59" rx="16" ry="3" fill="#FFFFFF" opacity=".35"/>
+    <g transform="rotate(-20 38 36)">
+      <rect x="21" y="22" width="34" height="28" rx="3" fill="#FFFFFF"/>
+      <path d="M21 22 L14 14 L32 14 L38 22 Z M55 22 L62 15 L45 14 L38 22 Z" fill="#FFFFFF" opacity=".75"/>
+      <rect x="35.5" y="22" width="5" height="12" fill="#1C1917" opacity=".3"/>
+      <rect x="25" y="40" width="10" height="2.5" rx="1" fill="#1C1917" opacity=".3"/>
+      <rect x="25" y="44" width="6" height="2.5" rx="1" fill="#1C1917" opacity=".3"/>
+    </g>
+  </g>
+  <text font-family="'Archivo Black', 'Arial Black', sans-serif" font-weight="900" fill="#FFFFFF" x="70" y="28" font-size="17" letter-spacing="1.5">VOM LASTER</text>
+  <text font-family="'Archivo Black', 'Arial Black', sans-serif" font-weight="900" fill="#FFFFFF" x="69" y="53" font-size="25" letter-spacing=".5" transform="rotate(-3 69 53)">GEFALLEN</text>
+</svg>

@@ -29,6 +29,11 @@ to also delete the data volumes.
 See [docs/DEPLOY_RAILWAY.md](docs/DEPLOY_RAILWAY.md), then work through
 [docs/HARDENING.md](docs/HARDENING.md).
 
+## Branding
+
+Logo, icons and colours ("Vom Laster gefallen") are built into the image and
+applied on every start. See [bookstack/branding/](bookstack/branding/README.md).
+
 ## Scripts
 
 | Script | Purpose |
