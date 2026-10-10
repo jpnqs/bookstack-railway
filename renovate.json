@@ -1,0 +1,19 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "docker:pinDigests", "helpers:pinGitHubActionDigests"],
+  "packageRules": [
+    {
+      "description": "BookStack: review release notes before merging (security releases, breaking changes).",
+      "matchPackageNames": ["lscr.io/linuxserver/bookstack"],
+      "versioning": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-ls(?<build>\\d+)$",
+      "labels": ["bookstack-upgrade"],
+      "automerge": false
+    },
+    {
+      "description": "Stay on the MariaDB 11.4 LTS line; majors need a manual upgrade plan.",
+      "matchPackageNames": ["mariadb"],
+      "allowedVersions": "/^11\\.4\\./",
+      "automerge": false
+    }
+  ]
+}

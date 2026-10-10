@@ -1,0 +1,91 @@
+# Local development / CI stack. Railway does NOT run this file; each service
+# is deployed separately there (see docs/DEPLOY_RAILWAY.md). Keep env var
+# names and images in sync with the Railway services.
+#
+#   cp .env.example .env && ./scripts/gen-secrets.sh >> .env   # once
+#   docker compose up -d --build
+#   open http://localhost:6875
+
+name: bookstack
+
+services:
+  bookstack:
+    build: ./bookstack
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: ${TZ:-Etc/UTC}
+      APP_URL: ${APP_URL:?set APP_URL in .env}
+      APP_KEY: ${APP_KEY:?set APP_KEY in .env (scripts/gen-secrets.sh)}
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_DATABASE: ${DB_DATABASE:-bookstack}
+      DB_USERNAME: ${DB_USERNAME:-bookstack}
+      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+      # Hardening (see docs/HARDENING.md)
+      SESSION_SECURE_COOKIE: ${SESSION_SECURE_COOKIE:-true}
+      APP_PROXIES: ${APP_PROXIES:-}
+      ALLOW_CONTENT_SCRIPTS: "false"
+      ALLOWED_IFRAME_SOURCES: ${ALLOWED_IFRAME_SOURCES:-}
+      API_REQUESTS_PER_MIN: ${API_REQUESTS_PER_MIN:-120}
+      # Mail (password reset, MFA, notifications). Locally: mailpit.
+      MAIL_DRIVER: smtp
+      MAIL_HOST: ${MAIL_HOST:-mailpit}
+      MAIL_PORT: ${MAIL_PORT:-1025}
+      MAIL_ENCRYPTION: ${MAIL_ENCRYPTION:-null}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-bookstack@example.local}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-BookStack}
+    volumes:
+      - bookstack_config:/config
+    ports:
+      # Bound to loopback only; never expose to the LAN.
+      - "127.0.0.1:${BOOKSTACK_PORT:-6875}:80"
+    networks: [frontend, backend]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost/status"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  db:
+    build: ./db
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: ${DB_DATABASE:-bookstack}
+      MARIADB_USER: ${DB_USERNAME:-bookstack}
+      MARIADB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?set DB_ROOT_PASSWORD in .env}
+      TZ: ${TZ:-Etc/UTC}
+    volumes:
+      - db_data:/var/lib/mysql
+    # No published ports: reachable only from the internal backend network.
+    networks: [backend]
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  mailpit:
+    image: axllent/mailpit:v1.31.4@sha256:b68349e3a014b90c5610bfb26b2ae36f3892d7b8cf25ee140c6c71c98d2fcf48
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025"
+    networks: [frontend, backend]
+
+networks:
+  frontend: {}
+  backend:
+    internal: true
+
+volumes:
+  bookstack_config: {}
+  db_data: {}

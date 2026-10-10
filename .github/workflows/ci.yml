@@ -1,0 +1,81 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 5 * * 1" # weekly re-scan for newly published CVEs
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Create throwaway .env
+        run: |
+          cp .env.example .env
+          sh scripts/gen-secrets.sh >> .env
+
+      - name: Start stack
+        run: docker compose up -d --build --wait --wait-timeout 300
+
+      - name: Health endpoint
+        run: curl -fsS http://localhost:6875/status
+
+      - name: Default admin must be replaceable
+        run: sh scripts/init-admin.sh ci@example.local "CI Admin" > /dev/null
+
+      - name: Default credentials must be rejected
+        run: sh scripts/check-default-login.sh http://localhost:6875
+
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs --no-color --tail 200
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
+
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [bookstack, db]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build image
+        run: docker build -t local/${{ matrix.service }}:ci ./${{ matrix.service }}
+
+      - name: Trivy scan (fail on fixable CRITICAL)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: local/${{ matrix.service }}:ci
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Trivy report (HIGH, informational)
+        if: always()
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: local/${{ matrix.service }}:ci
+          severity: HIGH
+          ignore-unfixed: true
+          exit-code: "0"
